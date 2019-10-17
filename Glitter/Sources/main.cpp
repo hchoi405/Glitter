@@ -12,13 +12,17 @@
 #include <iostream>
 #include <fstream>
 
+unsigned int VAO;
+unsigned int VBO;
+Mirage::Shader program;
+
 void processInput(GLFWwindow *window)
 {
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
 }
 
-int main(int argc, char *argv[])
+GLFWwindow *setupOpenGL()
 {
     // Load GLFW and Create a Window
     glfwInit();
@@ -27,19 +31,42 @@ int main(int argc, char *argv[])
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
     glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
-    auto mWindow = glfwCreateWindow(mWidth, mHeight, "OpenGL", nullptr, nullptr);
+    GLFWwindow *mWindow = glfwCreateWindow(mWidth, mHeight, "OpenGL", nullptr, nullptr);
 
     // Check for Valid Context
     if (mWindow == nullptr)
     {
         fprintf(stderr, "Failed to Create OpenGL Context");
-        return EXIT_FAILURE;
+        exit(-1);
     }
 
     // Create Context and Load OpenGL Functions
     glfwMakeContextCurrent(mWindow);
     gladLoadGL();
     fprintf(stderr, "OpenGL %s\n", glGetString(GL_VERSION));
+
+    return mWindow;
+}
+
+void update()
+{
+    float timeValue = glfwGetTime();
+    float greenValue = (sin(timeValue) / 2.0f) + 0.5f;
+    program.bind("inColor", glm::vec3(0.0f, greenValue, 0.0f));
+}
+
+void draw()
+{
+    // glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    glBindVertexArray(VAO);
+    glDrawArrays(GL_TRIANGLES, 0, 3);
+    // glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+    glBindVertexArray(0);
+}
+
+int main(int argc, char *argv[])
+{
+    auto mWindow = setupOpenGL();
 
     float vertices[] = {
         -0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f,
@@ -58,7 +85,6 @@ int main(int argc, char *argv[])
     // };
 
     // object information
-    unsigned int VAO;
     glGenVertexArrays(1, &VAO);
     glBindVertexArray(VAO);
 
@@ -67,7 +93,6 @@ int main(int argc, char *argv[])
     // glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
     // glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
-    unsigned int VBO;
     glGenBuffers(1, &VBO);
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
@@ -78,7 +103,6 @@ int main(int argc, char *argv[])
     glEnableVertexAttribArray(1);
 
     // Shader
-    Mirage::Shader program;
     program.attach("test.vert");
     program.attach("test.frag");
     program.link();
@@ -95,16 +119,9 @@ int main(int argc, char *argv[])
 
         program.activate();
 
-        float timeValue = glfwGetTime();
-        float greenValue = (sin(timeValue) / 2.0f) + 0.5f;
-        program.bind("inColor", glm::vec3(0.0f, greenValue, 0.0f));
+        update();
 
-        // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-        // glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-        glBindVertexArray(VAO);
-        glDrawArrays(GL_TRIANGLES, 0, 3);
-        // glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-        glBindVertexArray(0);
+        draw();
 
         // Flip Buffers and Draw
         glfwSwapBuffers(mWindow);
